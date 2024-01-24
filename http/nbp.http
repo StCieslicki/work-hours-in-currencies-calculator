@@ -1,0 +1,4 @@
+GET http://api.nbp.pl/api/exchangerates/tables/a/
+Accept: application/json
+
+###

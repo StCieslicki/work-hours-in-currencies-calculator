@@ -27,14 +27,14 @@ body {
 }
 
 @layer components{
-  /*body::before{*/
-  /*  display: block;*/
-  /*  content: '';*/
-  /*  height: 56px;*/
-  /*}*/
-  /*button, input, textarea{*/
-  /*  @apply outline-0*/
-  /*}*/
+  body::before{
+    display: block;
+    content: '';
+    height: 56px;
+  }
+  button, input, textarea{
+    @apply outline-0
+  }
   #links .active{
     @apply text-gray-200
   }
@@ -50,3 +50,7 @@ body {
     width: 8px;
   }
 }
+
+/*.row {*/
+/*  @apply flex flex-col items-center justify-center w-full gap-4 mt-4 sm:flex-row;*/
+/*}*/
