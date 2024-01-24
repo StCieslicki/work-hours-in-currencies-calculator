@@ -1,7 +1,6 @@
 "use client";
 import {useEffect, useState} from "react";
 import {ErrorMessage} from "../components/error";
-import {Title} from "../components/title";
 import {getFreeDaysCount, getWorkingDays, getYearDaysCount} from "../utils/holidays";
 import {Currencies } from "../utils/currencies";
 import {Row} from "../components/row";
@@ -124,7 +123,7 @@ export default function Home() {
         console.log('calculate');
     };
 
-    const recalculateByHourRate = (({pln, usd, eur}) => {
+    const recalculateByHourRate = (({pln, usd, eur}: {pln?: number, usd?: number, eur?: number}) => {
         setHourRatePln(pln);
         setHourRateUsd(usd);
         setHourRateEur(eur);
