@@ -46,20 +46,20 @@ export default function Home() {
     const [avgDayPerMonth, setAvgDayPerMonth] = useState(defaults.defaltAvgDayPerMonth);
 
     const [hourRatePln, setHourRatePln] = useState(defaults.defaultHourRate);
-    const [hourRateUsd, setHourRateUsd] = useState();
-    const [hourRateEur, setHourRateEur] = useState();
+    const [hourRateUsd, setHourRateUsd] = useState(0);
+    const [hourRateEur, setHourRateEur] = useState(0);
 
-    const [yearlyIncomePln, setYearlyIncomePln] = useState();
-    const [yearlyIncomeUsd, setYearlyIncomeUsd] = useState();
-    const [yearlyIncomeEur, setYearlyIncomeEur] = useState();
+    const [yearlyIncomePln, setYearlyIncomePln] = useState(0);
+    const [yearlyIncomeUsd, setYearlyIncomeUsd] = useState(0);
+    const [yearlyIncomeEur, setYearlyIncomeEur] = useState(0);
 
-    const [monthlyIncomePln, setMonthlyIncomePln] = useState();
-    const [monthlyIncomeUsd, setMonthlyIncomeUsd] = useState();
-    const [monthlyIncomeEur, setMonthlyIncomeEur] = useState();
+    const [monthlyIncomePln, setMonthlyIncomePln] = useState(0);
+    const [monthlyIncomeUsd, setMonthlyIncomeUsd] = useState(0);
+    const [monthlyIncomeEur, setMonthlyIncomeEur] = useState(0);
 
-    function recalculateCurrenciesByPln(pln, rates) {
-        const usd = (pln / rates.usd).toFixed(defaults.fixedToForSmall);
-        const eur = (pln / rates.eur).toFixed(defaults.fixedToForSmall);
+    function recalculateCurrenciesByPln(pln: number, rates: {usd: number, eur: number}): {pln:number,usd:number,eur:number} {
+        const usd: number = Number((pln / rates.usd).toFixed(defaults.fixedToForSmall));
+        const eur: number = Number((pln / rates.eur).toFixed(defaults.fixedToForSmall));
 
         return {pln, usd, eur}
     }
@@ -131,9 +131,9 @@ export default function Home() {
     });
 
     const recalculateByHourlyRatePln = (value) => {
-        const pln = value;
-        const usd = (value * plnRate / usdRate).toFixed(defaults.fixedToForSmall);
-        const eur = (value * plnRate / euroRate).toFixed(defaults.fixedToForSmall);
+        const pln: number = Number(value);
+        const usd: number = Number((value * plnRate / usdRate).toFixed(defaults.fixedToForSmall));
+        const eur: number = Number((value * plnRate / euroRate).toFixed(defaults.fixedToForSmall));
 
         recalculateByHourRate({pln, usd, eur});
         recalculateByYearlyIncome({pln, usd, eur});
@@ -141,9 +141,9 @@ export default function Home() {
     }
 
     const recalculateByHourlyRateUsd = (value) => {
-        const pln = (value * usdRate / plnRate).toFixed(defaults.fixedToForSmall);
-        const usd = value;
-        const eur = (value * usdRate / euroRate).toFixed(defaults.fixedToForSmall);
+        const pln: number = Number((value * usdRate / plnRate).toFixed(defaults.fixedToForSmall));
+        const usd: number = Number(value);
+        const eur: number = Number((value * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
 
         recalculateByHourRate({pln, usd, eur});
         recalculateByYearlyIncome({pln, usd, eur});
@@ -151,9 +151,9 @@ export default function Home() {
     }
 
     const recalculateByHourlyRateEur = (value) => {
-        const pln = (value * euroRate).toFixed(defaults.fixedToForSmall);
-        const usd = (value * euroRate / usdRate).toFixed(defaults.fixedToForSmall);
-        const eur = value;
+        const pln: number = Number((value * euroRate).toFixed(defaults.fixedToForSmall));
+        const usd: number = Number((value * euroRate / usdRate).toFixed(defaults.fixedToForSmall));
+        const eur: number = Number(value);
 
         recalculateByHourRate({pln, usd, eur});
         recalculateByYearlyIncome({pln, usd, eur});
@@ -162,16 +162,16 @@ export default function Home() {
 
 
 
-    const recalculateByMonthlyIncome = ({pln, usd, eur}) => {
-        pln ? setMonthlyIncomePln((pln * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge)) : null;
-        usd ? setMonthlyIncomeUsd((usd * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge)) : null;
-        eur ? setMonthlyIncomeEur((eur * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge)) : null;
+    const recalculateByMonthlyIncome = ({pln, usd, eur}: {pln?: number, usd?: number, eur?: number}) => {
+        pln ? setMonthlyIncomePln(Number((pln * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge))) : null;
+        usd ? setMonthlyIncomeUsd(Number((usd * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge))) : null;
+        eur ? setMonthlyIncomeEur(Number((eur * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge))) : null;
     }
 
     const recalculateByMonthlyIncomePln = (monthlyPln) => {
-        const pln = (monthlyPln / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall);
-        const usd = (pln / usdRate).toFixed(defaults.fixedToForSmall);
-        const eur = (pln / euroRate).toFixed(defaults.fixedToForSmall);
+        const pln:number = Number((monthlyPln / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall));
+        const usd:number = Number((pln / usdRate).toFixed(defaults.fixedToForSmall));
+        const eur:number = Number((pln / euroRate).toFixed(defaults.fixedToForSmall));
 
         setMonthlyIncomePln(monthlyPln);
         recalculateByHourRate({pln, usd, eur});
@@ -180,9 +180,9 @@ export default function Home() {
     }
 
     const recalculateByMonthlyIncomeUsd = (monthlyUsd) => {
-        const usd = (monthlyUsd / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall);
-        const pln = (usd * usdRate).toFixed(defaults.fixedToForSmall);
-        const eur = (usd * usdRate / euroRate).toFixed(defaults.fixedToForSmall);
+        const usd: number = Number((monthlyUsd / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall));
+        const pln:number = Number((usd * usdRate).toFixed(defaults.fixedToForSmall));
+        const eur:number = Number((usd * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
 
         setMonthlyIncomeUsd(monthlyUsd);
         recalculateByHourRate({pln, usd, eur});
@@ -191,9 +191,9 @@ export default function Home() {
     }
 
     const recalculateByMonthlyIncomeEur = (monthlyEur) => {
-        const eur = (monthlyEur / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall);
-        const pln = (eur * euroRate).toFixed(defaults.fixedToForSmall);
-        const usd = (eur * usdRate / euroRate).toFixed(defaults.fixedToForSmall);
+        const eur: number = Number((monthlyEur / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall));
+        const pln:number = Number((eur * euroRate).toFixed(defaults.fixedToForSmall));
+        const usd:number = Number((eur * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
 
         setMonthlyIncomeEur(monthlyEur);
         recalculateByHourRate({pln, usd, eur});
@@ -203,16 +203,16 @@ export default function Home() {
 
 
 
-    const recalculateByYearlyIncome = ({pln, usd, eur}) => {
-        pln ? setYearlyIncomePln((pln * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge)) : null;
-        usd ? setYearlyIncomeUsd((usd * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge)) : null;
-        eur ? setYearlyIncomeEur((eur * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge)) : null;
+    const recalculateByYearlyIncome = ({pln, usd, eur}: {pln?: number, usd?: number, eur?: number}) => {
+        pln ? setYearlyIncomePln(Number((pln * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge))) : null;
+        usd ? setYearlyIncomeUsd(Number((usd * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge))) : null;
+        eur ? setYearlyIncomeEur(Number((eur * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge))) : null;
     }
 
     const recalculateByYearlyIncomePln = (YearlyPln) => {
-        const pln = (YearlyPln / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall);
-        const usd = (pln / usdRate).toFixed(defaults.fixedToForSmall);
-        const eur = (pln / euroRate).toFixed(defaults.fixedToForSmall);
+        const pln:number = Number((YearlyPln / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall));
+        const usd:number = Number((pln / usdRate).toFixed(defaults.fixedToForSmall));
+        const eur:number = Number((pln / euroRate).toFixed(defaults.fixedToForSmall));
 
         setYearlyIncomePln(YearlyPln);
         recalculateByHourRate({pln, usd, eur});
@@ -221,9 +221,9 @@ export default function Home() {
     }
 
     const recalculateByYearlyIncomeUsd = (yearlyUsd) => {
-        const usd = (yearlyUsd / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall);
-        const pln = (usd * usdRate).toFixed(defaults.fixedToForSmall);
-        const eur = (usd * usdRate / euroRate).toFixed(defaults.fixedToForSmall);
+        const usd:number = Number((yearlyUsd / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall));
+        const pln:number = Number((usd * usdRate).toFixed(defaults.fixedToForSmall));
+        const eur:number = Number((usd * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
 
         setYearlyIncomeUsd(yearlyUsd);
         recalculateByHourRate({pln, usd, eur});
@@ -232,9 +232,9 @@ export default function Home() {
     }
 
     const recalculateByYearlyIncomeEur = (yearlyEur) => {
-        const eur = (yearlyEur / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall);
-        const pln = (eur * euroRate).toFixed(defaults.fixedToForSmall);
-        const usd = (eur * usdRate / euroRate).toFixed(defaults.fixedToForSmall);
+        const eur:number = Number((yearlyEur / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall));
+        const pln:number = Number((eur * euroRate).toFixed(defaults.fixedToForSmall));
+        const usd:number = Number((eur * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
 
         setYearlyIncomeEur(yearlyEur);
         recalculateByHourRate({pln, usd, eur});
