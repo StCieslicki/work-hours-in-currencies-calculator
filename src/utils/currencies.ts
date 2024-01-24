@@ -2,7 +2,7 @@ import axios from "axios";
 
 // const url = (currency) => `http://api.nbp.pl/api/exchangerates/rates/a/${currency}/?format=json`;
 
-const urlTables = 'http://api.nbp.pl/api/exchangerates/tables/a/';
+const urlTables = 'https://api.nbp.pl/api/exchangerates/tables/a/';
 
 const CURRENCIES = {
     USD: "USD",
