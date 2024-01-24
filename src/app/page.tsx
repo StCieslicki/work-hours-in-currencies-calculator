@@ -75,7 +75,7 @@ export default function Home() {
             const eurRate = currencies.getEurRate();
             setEuroRate(Number(eurRate.rate as number));
 
-            rates = {usd: Number(usdRate.rate), eur: Number(usdRate.rate)};
+            rates = {usd: Number(usdRate.rate), eur: Number(eurRate.rate)};
 
             const pln = defaults.defaultHourRate;
 
