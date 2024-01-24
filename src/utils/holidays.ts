@@ -1,16 +1,16 @@
 import Holidays from 'date-holidays';
 
-function getHolidays(year, country = 'PL') {
+function getHolidays(year: number, country = 'PL') {
     const holidays = new Holidays(country);
 
     return holidays.getHolidays(year).map((holiday) => holiday.date.slice(0,10));
 }
 
-function daysInMonth(month, year) {
+function daysInMonth(month: number, year: number) {
     return new Date(year, month, 0).getDate();
 }
 
-function getWeekendDays(year) {
+function getWeekendDays(year: number) {
     const saturdays = [];
     const sundays = [];
 
@@ -35,7 +35,7 @@ function getWeekendDays(year) {
     return { saturdays, sundays };
 }
 
-function getFreeDays(year) {
+function getFreeDays(year: number) {
     const daysSet = new Set();
 
     const { saturdays, sundays } = getWeekendDays(year);
@@ -48,8 +48,8 @@ function getFreeDays(year) {
     return Array.from(daysSet);
 }
 
-function getFreeDaysInMonth(year, month) {
-    let find;
+function getFreeDaysInMonth(year: number, month: number) {
+    let find: string;
 
     if (month < 10) {
         find = `-0${month}-`;
@@ -57,21 +57,22 @@ function getFreeDaysInMonth(year, month) {
         find = `-${month}-`;
     }
 
-    return getFreeDays(year).filter((element) => element.includes(find));
+    return getFreeDays(year).filter((element: any) => element.includes(find));
 }
 
-export function getFreeDaysCount(year) {
+export function getFreeDaysCount(year: number) {
     return getFreeDays(year).length;
 }
 
-export function getYearDaysCount(year) {
+export function getYearDaysCount(year: number) {
     const start = new Date(new Date().setUTCFullYear(year, 0, 0));
     const end = new Date(new Date().setUTCFullYear(year + 1, 0, 0));
 
+    // @ts-ignore
     return (end - start) / 1000 / 24 / 60 / 60;
 }
 
-export function getWorkingDays(year) {
+export function getWorkingDays(year: number) {
     return getYearDaysCount(year) - getFreeDaysCount(year);
 }
 

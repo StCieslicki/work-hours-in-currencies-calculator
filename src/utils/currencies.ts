@@ -12,7 +12,11 @@ const CURRENCIES = {
 const handledCurrencies = [CURRENCIES.USD, CURRENCIES.EUR];
 
 export class Currencies {
-    private currencies;
+    private currencies: {
+        currency?: string,
+        date?: string,
+        rate?: number
+    }[] = [{}];
 
     constructor() {
         //@ts-ignore
@@ -24,14 +28,16 @@ export class Currencies {
 
                 const {effectiveDate, rates} = response.data[0];
 
-                const currencies = rates.filter(rate => handledCurrencies.includes(rate.code));
+                const currencies = rates.filter((rate: object & { code: string}) => handledCurrencies.includes(rate.code));
 
-                this.currencies = currencies.map(currency => ({
+                this.currencies = currencies.map((currency: any) => ({
                     currency: currency.code,
                     date: effectiveDate,
                     rate: currency.mid
                 }));
+            //@ts-ignore
             } catch (error) {
+                //@ts-ignore
                 throw new Error(error);
             }
 
