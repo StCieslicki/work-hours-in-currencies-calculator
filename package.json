@@ -16,6 +16,7 @@
     "@mui/material": "^5.15.4",
     "@mui/system": "^5.15.4",
     "axios": "^1.6.5",
+    "clsx": "^2.1.0",
     "date-holidays": "^3.23.3",
     "next": "14.0.4",
     "react": "^18",
