@@ -2,11 +2,13 @@
 import {useEffect, useState} from "react";
 import {ErrorMessage} from "../components/error";
 import {getFreeDaysCount, getWorkingDays, getYearDaysCount} from "../utils/holidays";
-import {Currencies } from "../utils/currencies";
+import {Currencies, CurrenciesList, recalculateByMultiplier, recalculateCurrencies} from "../utils/currencies";
 import {Row} from "../components/row";
 import {Input} from "../components/input";
+import {createYearList, shortendNumber, shortendNumbers} from "../utils/utils";
+import {RowItems} from "../components/rows/rowItems";
 
-export default function Home() {
+export default function Calculator() {
     const currentYear = new Date().getFullYear();
 
     const defaults = {
@@ -16,10 +18,10 @@ export default function Home() {
         defaultHourPerDay: 8,
 
         defaltAvgDayPerMonth: 22,
-        daysInYear: getYearDaysCount(currentYear),
-        workingDays: getWorkingDays(currentYear),
-        freeDays: getFreeDaysCount(currentYear),
-        defaultPayedLeaveDays: 0,
+        daysInYear: 365,
+        workingDays: 252,
+        freeDays: 113,
+        defaultPayedLeaveDays: 26,
 
         fixedToForLarge: 0,
         fixedToForSmall: 2,
@@ -27,223 +29,222 @@ export default function Home() {
 
     const [error, setError] = useState('');
 
-    const [currencyDate, setCurrencyDate] = useState('');
-    const [plnRate, setPlnRate] = useState(1);
-    const [usdRate, setUsdRate] = useState(0);
-    const [euroRate, setEuroRate] = useState(0);
+    const [currencyDate, setCurrencyDate]: [string, Function] = useState('');
+    const [rates, setRates]: [CurrenciesList, Function] = useState({ pln: 1, usd: 0, eur: 0 });
 
-    const [hourPerDay, setHourPerDay] = useState(defaults.defaultHourPerDay);
+    const [hourPerDay, setHourPerDay]: [number, Function] = useState(defaults.defaultHourPerDay);
 
-    const [nettoBruttoRate, setNettoBruttoRate] = useState(defaults.nonVatRate);
+    // const [nettoBruttoRate, setNettoBruttoRate]: [number, Function] = useState(defaults.nonVatRate);
 
-    const [year, setYear] = useState(currentYear);
-    const [daysInYear, setDaysInYear] = useState(defaults.daysInYear);
-    const [workingDays, setWorkingDays] = useState(defaults.workingDays);
-    const [freeDays, setFreeDays] = useState(defaults.freeDays);
-    const [payedLeaveDays, setPayedLeaveDays] = useState(defaults.defaultPayedLeaveDays);
+    const [year, setYear]: [number, Function] = useState(currentYear);
+    const [daysInYear, setDaysInYear]: [number, Function] = useState(defaults.daysInYear);
+    const [workingDays, setWorkingDays]: [number, Function] = useState(defaults.workingDays);
+    const [freeDays, setFreeDays]: [number, Function] = useState(defaults.freeDays);
+    const [payedLeaveDays, setPayedLeaveDays]: [number, Function] = useState(defaults.defaultPayedLeaveDays);
+    const [switchPayedleaveDays, setSwitchPayedleaveDays]: [boolean, Function] = useState(false);
 
-    const [avgDayPerMonth, setAvgDayPerMonth] = useState(defaults.defaltAvgDayPerMonth);
+    const [monthlyMultiplier, setMonthlyMultiplier] = useState(1);
+    const [yearlyMultiplier, setYearlyMultiplier] = useState(1);
+    const [payedLeaveDaysMultiplier, setPayedLeaveDaysMultiplier] = useState(1);
+    const [vatMultiplier, setVatMultiplier] = useState(defaults.nonVatRate);
 
-    const [hourRatePln, setHourRatePln] = useState(defaults.defaultHourRate);
-    const [hourRateUsd, setHourRateUsd] = useState(0);
-    const [hourRateEur, setHourRateEur] = useState(0);
+    const [avgDayPerMonth, setAvgDayPerMonth]: [number, Function] = useState(defaults.defaltAvgDayPerMonth);
 
-    const [yearlyIncomePln, setYearlyIncomePln] = useState(0);
-    const [yearlyIncomeUsd, setYearlyIncomeUsd] = useState(0);
-    const [yearlyIncomeEur, setYearlyIncomeEur] = useState(0);
-
-    const [monthlyIncomePln, setMonthlyIncomePln] = useState(0);
-    const [monthlyIncomeUsd, setMonthlyIncomeUsd] = useState(0);
-    const [monthlyIncomeEur, setMonthlyIncomeEur] = useState(0);
-
-    function recalculateCurrenciesByPln(pln: number, rates: {usd: number, eur: number}): {pln:number,usd:number,eur:number} {
-        const usd: number = Number((pln / rates.usd).toFixed(defaults.fixedToForSmall));
-        const eur: number = Number((pln / rates.eur).toFixed(defaults.fixedToForSmall));
-
-        return {pln, usd, eur}
-    }
+    const [hourlyRates, setHourlyRates]: [CurrenciesList, Function] = useState({ pln: defaults.defaultHourRate, usd: 0, eur: 0 });
+    const [dailyRates, setDailyRates]: [CurrenciesList, Function] = useState({ pln: defaults.defaultHourRate * defaults.defaultHourPerDay, usd: 0, eur: 0 });
+    const [monthlyIncomes, setMonthlyIncomes]: [CurrenciesList, Function] = useState({ pln: 0, usd: 0, eur: 0 });
+    const [yearlyIncomes, setYearlyIncomes]: [CurrenciesList, Function] = useState({ pln: 0, usd: 0, eur: 0 });
 
     useEffect( () => {
-        let rates = {usd:0, eur:0};
+        defaults.daysInYear = getYearDaysCount(currentYear);
+        defaults.workingDays = getWorkingDays(currentYear);
+        defaults.freeDays = getFreeDaysCount(currentYear);
+
+        const monthlyMultiplier = hourPerDay * workingDays / 12;
+        const yearlyMultiplier = hourPerDay * workingDays;
+
+        setMonthlyMultiplier(monthlyMultiplier);
+        setYearlyMultiplier(yearlyMultiplier);
+
+        let rates: CurrenciesList;
+
         (async () => {
             const currencies = await new Currencies();
 
             const usdRate = currencies.getUsdRate();
-            setCurrencyDate(usdRate.date as string);
-            setUsdRate(Number(usdRate.rate as number));
-
             const eurRate = currencies.getEurRate();
-            setEuroRate(Number(eurRate.rate as number));
 
-            rates = {usd: Number(usdRate.rate), eur: Number(eurRate.rate)};
+            setCurrencyDate(usdRate.date as string);
+
+            rates = { pln: 1, usd: Number(usdRate.rate), eur: Number(eurRate.rate) };
+
+            setRates(rates);
 
             const pln = defaults.defaultHourRate;
 
-            const currenciesObj = recalculateCurrenciesByPln(pln, rates);
+            const currenciesObj = recalculateCurrencies({ pln }, rates);
 
-            const {usd, eur} = currenciesObj;
+            const { usd, eur } = currenciesObj;
 
-            setHourRateUsd(usd);
-            setHourRateEur(eur);
-
-            recalculateByHourRate(currenciesObj);
-            recalculateByYearlyIncome(currenciesObj);
-            recalculateByMonthlyIncome(currenciesObj);
+            setRecalculateHourlyRate(currenciesObj);
+            // setRecalculateHourlyRate(currenciesObj, vatMultiplier);
+            setRecalculateDailyRate(currenciesObj, hourPerDay);
+            // setRecalculateDailyRate(currenciesObj, hourPerDay * vatMultiplier);
+            setRecalculateYearlyIncomes(currenciesObj, yearlyMultiplier);
+            // setRecalculateYearlyIncomes(currenciesObj, yearlyMultiplier * vatMultiplier);
+            setRecalculateMonthlyIncomes(currenciesObj, monthlyMultiplier);
+            // setRecalculateMonthlyIncomes(currenciesObj, monthlyMultiplier * vatMultiplier);
         })();
-        }, []);
+    }, []);
 
     useEffect(() => {
         setDaysInYear(getYearDaysCount(year));
         setWorkingDays(getWorkingDays(year));
         setFreeDays(getFreeDaysCount(year));
-
-        // recalculateByHourRate({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
-        recalculateByYearlyIncome({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
-        recalculateByMonthlyIncome({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
     }, [year]);
 
     useEffect(() => {
-        setAvgDayPerMonth(Number((workingDays / 12).toFixed(defaults.fixedToForSmall)));
+        setAvgDayPerMonth(shortendNumber(workingDays / 12));
     }, [workingDays]);
 
     useEffect(() => {
-        // recalculateByHourRate({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
-        recalculateByYearlyIncome({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
-        recalculateByMonthlyIncome({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
+        const monthlyMultiplier = hourPerDay * workingDays / 12;
+        const yearlyMultiplier = hourPerDay * workingDays;
+
+        setMonthlyMultiplier(monthlyMultiplier);
+        setYearlyMultiplier(yearlyMultiplier);
+
+        const recalculated = recalculateCurrencies({ pln: hourlyRates.pln }, rates);
+
+        setRecalculateDailyRate(recalculated);
+        setRecalculateYearlyIncomes(recalculated, yearlyMultiplier);
+        setRecalculateMonthlyIncomes(recalculated, monthlyMultiplier);
     }, [hourPerDay]);
 
     useEffect(()=> {
         // recalculateByHourRate({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
-        recalculateByYearlyIncome({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
-        recalculateByMonthlyIncome({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
-    }, [payedLeaveDays])
+        // recalculateByYearlyIncome({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
+        // recalculateByMonthlyIncome({pln: hourRatePln, usd: hourRateUsd, eur: hourRateEur});
+    }, [payedLeaveDays]);
+
+    useEffect(() => {
+
+    }, [switchPayedleaveDays]);
+
+    useEffect(() =>{
+        const recalculated = recalculateCurrencies({ pln: Number(hourlyRates.pln) }, rates);
+
+        setRecalculateHourlyRate(recalculated, vatMultiplier);
+        setRecalculateDailyRate(recalculated, hourPerDay * vatMultiplier);
+        setRecalculateMonthlyIncomes(recalculated, monthlyMultiplier * vatMultiplier);
+        setRecalculateYearlyIncomes(recalculated, yearlyMultiplier * vatMultiplier);
+
+    }, [vatMultiplier]);
 
     const onSubmit = async () => {
         setError("");
-
-        console.log('calculate');
     };
 
-    const recalculateByHourRate = (({pln, usd, eur}: {pln: number, usd: number, eur: number}) => {
-        setHourRatePln(pln);
-        setHourRateUsd(usd);
-        setHourRateEur(eur);
+    const setRecalculateHourlyRate = (({ pln, usd, eur }: CurrenciesList, multiplier: number = 1) => {
+        const result = shortendNumbers(
+            recalculateByMultiplier({pln, usd, eur}, multiplier), defaults.fixedToForSmall
+        );
+
+        setHourlyRates(result);
     });
 
-    const recalculateByHourlyRatePln = (value:number) => {
-        const pln: number = Number(value);
-        const usd: number = Number((value * plnRate / usdRate).toFixed(defaults.fixedToForSmall));
-        const eur: number = Number((value * plnRate / euroRate).toFixed(defaults.fixedToForSmall));
+    const setRecalculateDailyRate = (({ pln, usd, eur }: CurrenciesList, multiplier = hourPerDay) => {
+        const result = shortendNumbers(
+            recalculateByMultiplier({pln, usd, eur}, multiplier), defaults.fixedToForLarge
+        );
 
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByYearlyIncome({pln, usd, eur});
-        recalculateByMonthlyIncome({pln, usd, eur});
+        setDailyRates(result);
+
+        return result;
+    });
+
+    const setRecalculateMonthlyIncomes = ({pln, usd, eur}: CurrenciesList, multiplier = monthlyMultiplier) => {
+        const result = shortendNumbers(
+            recalculateByMultiplier({pln, usd, eur}, multiplier), defaults.fixedToForLarge
+        );
+
+        setMonthlyIncomes(result);
+
+        return result;
     }
 
-    const recalculateByHourlyRateUsd = (value:number) => {
-        const pln: number = Number((value * usdRate / plnRate).toFixed(defaults.fixedToForSmall));
-        const usd: number = Number(value);
-        const eur: number = Number((value * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
+    const setRecalculateYearlyIncomes = ({pln, usd, eur}: CurrenciesList, multiplier = yearlyMultiplier) => {
+        const result = shortendNumbers(
+            recalculateByMultiplier({pln, usd, eur}, multiplier), defaults.fixedToForLarge
+        );
 
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByYearlyIncome({pln, usd, eur});
-        recalculateByMonthlyIncome({pln, usd, eur});
+        setYearlyIncomes(result);
+
+        return result;
     }
 
-    const recalculateByHourlyRateEur = (value:number) => {
-        const pln: number = Number((value * euroRate).toFixed(defaults.fixedToForSmall));
-        const usd: number = Number((value * euroRate / usdRate).toFixed(defaults.fixedToForSmall));
-        const eur: number = Number(value);
+    const updateHourly = ({recalculated}: {recalculated: CurrenciesList, key?: string, value?: number}) => {
+        console.log('recalculated', recalculated);
 
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByYearlyIncome({pln, usd, eur});
-        recalculateByMonthlyIncome({pln, usd, eur});
+        setRecalculateHourlyRate(recalculated);
+        setRecalculateDailyRate(recalculated);
+        setRecalculateMonthlyIncomes(recalculated);
+        setRecalculateYearlyIncomes(recalculated);
     }
 
+    const updateDaily = ({recalculated, key, value}: {recalculated: CurrenciesList, key?: string, value?: number}) => {
+        setRecalculateHourlyRate(recalculated);
+        const dailyRateRecalculated = setRecalculateDailyRate(recalculated);
+        setRecalculateMonthlyIncomes(recalculated);
+        setRecalculateYearlyIncomes(recalculated);
 
-
-    const recalculateByMonthlyIncome = ({pln, usd, eur}: {pln?: number, usd?: number, eur?: number}) => {
-        pln ? setMonthlyIncomePln(Number((pln * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge))) : null;
-        usd ? setMonthlyIncomeUsd(Number((usd * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge))) : null;
-        eur ? setMonthlyIncomeEur(Number((eur * hourPerDay * (workingDays - payedLeaveDays) / 12).toFixed(defaults.fixedToForLarge))) : null;
+        setDailyRates({...dailyRateRecalculated, [key as string]: value as number});
     }
 
-    const recalculateByMonthlyIncomePln = (monthlyPln:number) => {
-        const pln:number = Number((monthlyPln / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall));
-        const usd:number = Number((pln / usdRate).toFixed(defaults.fixedToForSmall));
-        const eur:number = Number((pln / euroRate).toFixed(defaults.fixedToForSmall));
+    const udpateMonthly = ({recalculated, key, value}: {recalculated: CurrenciesList, key?: string, value?: number}) => {
+        setRecalculateHourlyRate(recalculated);
+        setRecalculateDailyRate(recalculated);
+        const monthlyIcomeRecalculated = setRecalculateMonthlyIncomes(recalculateCurrencies({ [key as string]: shortendNumber(value as number) }, rates), 1);
+        setRecalculateYearlyIncomes(recalculateCurrencies({ [key as string]: shortendNumber((value as number) * 12) }, rates), 1);
 
-        setMonthlyIncomePln(monthlyPln);
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByMonthlyIncome({usd, eur});
-        recalculateByYearlyIncome({pln, usd, eur});
+        setMonthlyIncomes({...monthlyIcomeRecalculated, [key as string]: value});
     }
 
-    const recalculateByMonthlyIncomeUsd = (monthlyUsd:number) => {
-        const usd: number = Number((monthlyUsd / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall));
-        const pln:number = Number((usd * usdRate).toFixed(defaults.fixedToForSmall));
-        const eur:number = Number((usd * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
+    const updateYearly = ({recalculated, key, value}: {recalculated: CurrenciesList, key?: string, value?: number}) => {
+        setRecalculateHourlyRate(recalculated);
+        setRecalculateDailyRate(recalculated);
 
-        setMonthlyIncomeUsd(monthlyUsd);
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByMonthlyIncome({pln, eur});
-        recalculateByYearlyIncome({pln, usd, eur});
+        setRecalculateMonthlyIncomes(recalculateCurrencies({ [key as string]: shortendNumber((value as number) / 12) }, rates), 1);
+        const yearlyIncomeRecalculated = setRecalculateYearlyIncomes(recalculateCurrencies({ [key as string]: shortendNumber(value as number) }, rates), 1);
+
+        setYearlyIncomes({...yearlyIncomeRecalculated, [key as string]: value});
     }
 
-    const recalculateByMonthlyIncomeEur = (monthlyEur:number) => {
-        const eur: number = Number((monthlyEur / hourPerDay / ((workingDays - payedLeaveDays) / 12)).toFixed(defaults.fixedToForSmall));
-        const pln:number = Number((eur * euroRate).toFixed(defaults.fixedToForSmall));
-        const usd:number = Number((eur * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
+    // @ts-ignore
+    const changePayedLeaveDays = (item) => {
+        // todo fixme handle disabled
+        setPayedLeaveDays(item.value);
+        setSwitchPayedleaveDays(item.disabled);
+    };
 
-        setMonthlyIncomeEur(monthlyEur);
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByMonthlyIncome({pln, usd});
-        recalculateByYearlyIncome({pln, usd, eur});
-    }
+    // @ts-ignore
+    const changeVatRate = (item) => {
+        item.disabled ? setVatMultiplier(item.value) : setVatMultiplier(1/item.value);
+    };
 
+    // @ts-ignore
+    const changeOtherAmortization = (item) => {
+        // todo fixme handle disabled
 
+        // setVatRate(item.value);
+    };
 
-    const recalculateByYearlyIncome = ({pln, usd, eur}: {pln?: number, usd?: number, eur?: number}) => {
-        pln ? setYearlyIncomePln(Number((pln * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge))) : null;
-        usd ? setYearlyIncomeUsd(Number((usd * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge))) : null;
-        eur ? setYearlyIncomeEur(Number((eur * hourPerDay * (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForLarge))) : null;
-    }
-
-    const recalculateByYearlyIncomePln = (YearlyPln:number) => {
-        const pln:number = Number((YearlyPln / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall));
-        const usd:number = Number((pln / usdRate).toFixed(defaults.fixedToForSmall));
-        const eur:number = Number((pln / euroRate).toFixed(defaults.fixedToForSmall));
-
-        setYearlyIncomePln(YearlyPln);
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByMonthlyIncome({pln, usd, eur});
-        recalculateByYearlyIncome({usd, eur});
-    }
-
-    const recalculateByYearlyIncomeUsd = (yearlyUsd:number) => {
-        const usd:number = Number((yearlyUsd / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall));
-        const pln:number = Number((usd * usdRate).toFixed(defaults.fixedToForSmall));
-        const eur:number = Number((usd * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
-
-        setYearlyIncomeUsd(yearlyUsd);
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByMonthlyIncome({pln, usd, eur});
-        recalculateByYearlyIncome({pln, eur});
-    }
-
-    const recalculateByYearlyIncomeEur = (yearlyEur:number) => {
-        const eur:number = Number((yearlyEur / hourPerDay / (workingDays - payedLeaveDays)).toFixed(defaults.fixedToForSmall));
-        const pln:number = Number((eur * euroRate).toFixed(defaults.fixedToForSmall));
-        const usd:number = Number((eur * usdRate / euroRate).toFixed(defaults.fixedToForSmall));
-
-        setYearlyIncomeEur(yearlyEur);
-        recalculateByHourRate({pln, usd, eur});
-        recalculateByMonthlyIncome({pln, usd, eur});
-        recalculateByYearlyIncome({pln, usd});
-    }
+    const changeYear = (year: number) => {
+        setYear(Number(year));
+    };
 
     return (
-        <div className="container px-8 mx-auto mt-16 lg:mt-32 text-white">
+        <div className="container px-8 mx-auto mt-8 lg:mt-16 text-white">
             {error ? <ErrorMessage message={error} /> : null}
             <form
                 className="max-w-3xl mx-auto"
@@ -252,158 +253,94 @@ export default function Home() {
                 }}
                 >
 
-                {/*<Title>Currency Calculator</Title>*/}
-
                 <Row title="Settings" description={workingDays ? `There is ${workingDays} working days in ${year}, avg ${avgDayPerMonth} days per month` : ''}>
+                    <Input
+                        label="Country"
+                        name="country"
+                        value={'PL'}
+                        type='dummy'
+                        onChange={() => {}}
+                        disabled
+                    />
+
                     <Input
                         label="Year"
                         name="year"
-                        value={year}
-                        onChange={setYear}
+                        value={{list: createYearList(currentYear), current: year}}
+                        onChange={changeYear}
+                        type='select'
                     />
 
                     <Input
                         label="Hour Per Day"
                         name="hourPerDay"
                         value={hourPerDay}
-                        onChange={setHourPerDay}
+                        onChange={(hour: { value: number }) => setHourPerDay(hour.value)}
                     />
 
+                </Row>
+
+                {false && <Row>
                     <Input
                         label="Payed leave days"
                         name="payedLeaveDays"
                         value={payedLeaveDays}
-                        onChange={setPayedLeaveDays}
+                        onChange={changePayedLeaveDays}
+                        type='checkbox-value'
+                        disabled
+                    />
+                    <Input
+                        label="Netto/Brutto rate"
+                        name="payedLeaveDays"
+                        value={defaults.vatRate}
+                        onChange={changeVatRate}
+                        type='checkbox-value'
+                        disabled
+                    />
+                    <Input
+                        label="other amortization"
+                        name="payedLeaveDays"
+                        value={0}
+                        onChange={changeOtherAmortization}
+                        type='checkbox-value'
                         disabled
                     />
                 </Row>
+                }
 
                 <Row title="Currencies" description={currencyDate ? `currencies from NBP (${currencyDate})` : ''}>
                     <Input
                         className="text-zink-400"
-                        label="PLN"
                         name="pln"
-                        value={plnRate}
+                        value={rates.pln}
+                        currency="pln"
                         disabled
                     />
 
                     <Input
                         className="text-zink-400"
-                        label="USD"
                         name="usd"
-                        value={usdRate}
+                        value={rates.usd}
+                        currency="usd"
                         disabled
                     />
 
                     <Input
                         className="text-zink-400"
-                        label="EUR"
                         name="eur"
-                        value={euroRate}
+                        value={rates.eur}
+                        currency="eur"
                         disabled
                     />
                 </Row>
 
+                <RowItems title="Hour rate" value={hourlyRates} rates={rates} updateFn={updateHourly}/>
 
-                <Row title="Hour rate">
-                    <Input
-                        label="Hour rate PLN"
-                        name="hourRatePln"
-                        value={hourRatePln}
-                        onChange={recalculateByHourlyRatePln}
-                    />
+                <RowItems title="Daily rate" value={dailyRates} rates={rates} updateFn={updateDaily} multiplier={hourPerDay}/>
 
-                    <Input
-                        label="Hour rate USD"
-                        name="hourRateUsd"
-                        value={hourRateUsd}
-                        onChange={recalculateByHourlyRateUsd}
-                        disabled={!usdRate}
-                    />
+                <RowItems title="Monthly income" value={monthlyIncomes} rates={rates} updateFn={udpateMonthly} multiplier={monthlyMultiplier}/>
 
-                    <Input
-                        label="Hour rate EUR"
-                        name="hourRateEur"
-                        value={hourRateEur}
-                        onChange={recalculateByHourlyRateEur}
-                        disabled={!euroRate}
-                    />
-                </Row>
-
-                <Row title="Monthly income">
-                    <Input
-                        label="Monthly income PLN"
-                        name="monthlyIncomePln"
-                        value={monthlyIncomePln}
-                        onChange={recalculateByMonthlyIncomePln}
-                    />
-
-                    <Input
-                        label="Monthly income USD"
-                        name="monthlyIncomeUsd"
-                        value={monthlyIncomeUsd}
-                        onChange={recalculateByMonthlyIncomeUsd}
-                        disabled={!usdRate}
-                    />
-
-                    <Input
-                        label="Monthly income EUR"
-                        name="monthlyIncomeEur"
-                        value={monthlyIncomeEur}
-                        onChange={recalculateByMonthlyIncomeEur}
-                        disabled={!euroRate}
-                    />
-                </Row>
-
-                <Row title="Yearly income">
-                    <Input
-                        label="Yearly income PLN"
-                        name="yearlyIncomePln"
-                        value={yearlyIncomePln}
-                        onChange={recalculateByYearlyIncomePln}
-                    />
-
-                    <Input
-                        label="Yearly income USD"
-                        name="yearlyIncomeUsd"
-                        value={yearlyIncomeUsd}
-                        onChange={recalculateByYearlyIncomeUsd}
-                        disabled={!usdRate}
-                    />
-
-                    <Input
-                        label="Yearly income EUR"
-                        name="yearlyIncomeEur"
-                        value={yearlyIncomeEur}
-                        onChange={recalculateByYearlyIncomeEur}
-                        disabled={!euroRate}
-                    />
-                </Row>
-
-
-{/*                <p>Year: {year}</p>*/}
-{/*                <p>Days in year: {daysInYear}</p>*/}
-{/*                <p>Working days: {workingDays}</p>*/}
-{/*                <p>Free days: {freeDays}</p>*/}
-{/*                <p>Avg working days per month: {avgDayPerMonth}</p>*/}
-{/*                <p>Avg hours per month: {avgDayPerMonth * hourPerDay}</p>*/}
-{/*<br/>*/}
-{/*                {currencyDate && <p>Currency Date: {currencyDate}</p>}*/}
-{/*                {usdRate && <p>Usd rate: {usdRate}</p>}*/}
-{/*                {euroRate && <p>Euro rate: {euroRate}</p>}*/}
-{/*<br/>*/}
-{/*                {hourRatePln && <p>Hour rate PLN: {hourRatePln}</p>}*/}
-{/*                {hourRateUsd && <p>Hour rate USD: {hourRateUsd}</p>}*/}
-{/*                {hourRateEur && <p>Hour rate EUR: {hourRateEur}</p>}*/}
-{/*<br/>*/}
-{/*                {hourRatePln && <p>Monthly rate PLN: {monthlyIncomePln}</p>}*/}
-{/*                {hourRatePln && <p>Yearly rate PLN: {yearlyIncomePln}</p>}*/}
-{/*                <br/>*/}
-{/*                {hourRateUsd && <p>Monthly rate USD: {monthlyIncomeUsd}</p>}*/}
-{/*                {hourRateUsd && <p>Yearly rate USD: {yearlyIncomeUsd}</p>}*/}
-{/*                <br/>*/}
-{/*                {hourRateEur && <p>Monthly rate EUR: {monthlyIncomeEur}</p>}*/}
-{/*                {hourRateEur && <p>Yearly rate EUR: {yearlyIncomeEur}</p>}*/}
+                <RowItems title="Yearly income" value={yearlyIncomes} rates={rates} updateFn={updateYearly} multiplier={yearlyMultiplier} />
             </form>
         </div>
     );

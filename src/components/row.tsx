@@ -1,6 +1,8 @@
 import {PropsWithChildren} from "react";
 
-export const Row: React.FC<PropsWithChildren & {title: string, description?:string}> = ({ children, title, description }): JSX.Element => {
+export const Row: React.FC<PropsWithChildren & {title?: string, description?:string}> = (
+    { children, title = '', description = '' }
+): JSX.Element => {
     return (
         <>
         {/*{title && <h2 className="mt-5 mb-0 flex flex-col sm:items-center sm:justify-center sm:flex-row">{title} <span className="text-xs text-zinc-400">{description}</span></h2>}*/}

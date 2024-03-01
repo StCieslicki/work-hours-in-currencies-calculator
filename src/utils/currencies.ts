@@ -68,9 +68,9 @@ export function recalculateCurrencies(currency: Partial<CurrenciesList>, rates: 
     const value = Object.values(currency)[0];
 
     if (rates[key]) {
-        const pln = shortendNumber(value * rates[key] / rates.pln);
-        const usd = shortendNumber(value * rates[key] / rates.usd);
-        const eur = shortendNumber(value * rates[key] / rates.eur);
+        const pln = shortendNumber(value as number * rates[key] / rates.pln);
+        const usd = shortendNumber(value as number * rates[key] / rates.usd);
+        const eur = shortendNumber(value as number * rates[key] / rates.eur);
 
         return { pln, usd, eur }
     }
@@ -82,7 +82,9 @@ export function recalculateByMultiplier (currencies: CurrenciesList, multiplier:
     const result = {};
 
     for (const key in currencies) {
-        result[key] = currencies[key] * multiplier;
+
+        // @ts-ignore
+        result[key as string] = currencies[key as string] * multiplier;
     }
 
     return result;

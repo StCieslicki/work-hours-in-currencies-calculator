@@ -6,6 +6,8 @@ import {Dispatch, SetStateAction, useState} from "react";
 import {Switch} from "@nextui-org/react";
 // export const Input: React.FC = ({label, type, name, value, placeholder, disabled, onChange, className }): JSX.Element => {
 //@ts-ignore
+interface SelectData { list: number[]; current: number; }
+
 export const Input = ({
     label,
     type,
@@ -17,15 +19,15 @@ export const Input = ({
     onChange,
     className
 }: {
-    label: string,
-    name:string,
-    value:number,
+    label?: string,
+    name: string,
+    value: number | string | SelectData,
     currency?: string,
-    type?:string,
-    placeholder?:string,
+    type?: string,
+    placeholder?: string,
     disabled?: boolean,
     onChange?: any,
-    className?:string
+    className?: string
 }) => {
     const [disabledState, setDisabledState] = useState(disabled);
     const [usedValue, setUsedValue] = useState(value);
@@ -73,9 +75,9 @@ export const Input = ({
                             disabledState && 'text-zinc-500'
                         )
                     }
-                    value={value}
+                    value={value as number}
                     onChange={(e) => {
-                        onChange({ value: e.target.valueAsNumber, data: {[currency]: e.target.valueAsNumber} });
+                        onChange({ value: e.target.valueAsNumber, data: {[currency as string]: e.target.valueAsNumber} });
                     }}
                     placeholder={placeholder}
                     disabled={disabled}
@@ -83,7 +85,20 @@ export const Input = ({
             }
 
             {type === 'select' &&
-                <p className={clsx(disabled && 'text-zinc-500')}>{value}</p>
+                <>
+                    <select value={(value as SelectData).current} onChange={(e) => {
+                        onChange(e.target.value);
+                    }}>
+                        {((value as SelectData).list as number[]).map(item => (
+                            <option key={item}>{item}</option>
+                        ))}
+                    </select>
+                </>
+            }
+            {type === 'dummy' &&
+                <>
+                <p className={clsx(disabled && 'text-zinc-500')}>{value as string}</p>
+                </>
             }
 
             {type === 'checkbox-value' &&
@@ -98,7 +113,6 @@ export const Input = ({
                     <Switch
                         size="sm"
                         color="success"
-                        label=""
                         className={
                             clsx(
                                 // 'flex-item'
@@ -126,10 +140,10 @@ export const Input = ({
                                 'w-3/4'
                             )
                         }
-                        value={value}
+                        value={value as number}
                         onChange={(e) => {
                             setUsedValue(e.target.valueAsNumber);
-                            onChange({ disabled: disabledState, value: e.target.valueAsNumber, data: {[currency]: e.target.valueAsNumber} });
+                            onChange({ disabled: disabledState, value: e.target.valueAsNumber, data: {[currency as string]: e.target.valueAsNumber} });
                         }}
                         placeholder={placeholder}
                         disabled={disabledState ? disabledState : false }

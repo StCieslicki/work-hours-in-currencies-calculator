@@ -75,14 +75,3 @@ export function getYearDaysCount(year: number) {
 export function getWorkingDays(year: number) {
     return getYearDaysCount(year) - getFreeDaysCount(year);
 }
-
-const year = 2024;
-
-let vatRate = 1;
-let currencyRate = 1;
-
-let hourRate;
-let leaveDays;
-let leaveDaysRate;
-
-const dayInYear = getYearDaysCount(year);
