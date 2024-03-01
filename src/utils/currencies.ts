@@ -1,4 +1,5 @@
 import axios from "axios";
+import {shortendNumber} from "./utils";
 
 // const url = (currency) => `http://api.nbp.pl/api/exchangerates/rates/a/${currency}/?format=json`;
 
@@ -56,4 +57,33 @@ export class Currencies {
 
         return { rate, date };
     }
+}
+
+export interface CurrenciesList {
+    [key: string]: number,
+}
+
+export function recalculateCurrencies(currency: Partial<CurrenciesList>, rates: CurrenciesList): CurrenciesList {
+    const key = Object.keys(currency)[0];
+    const value = Object.values(currency)[0];
+
+    if (rates[key]) {
+        const pln = shortendNumber(value * rates[key] / rates.pln);
+        const usd = shortendNumber(value * rates[key] / rates.usd);
+        const eur = shortendNumber(value * rates[key] / rates.eur);
+
+        return { pln, usd, eur }
+    }
+
+    throw new Error(`No rates for currency: ${key}`);
+}
+
+export function recalculateByMultiplier (currencies: CurrenciesList, multiplier: number) {
+    const result = {};
+
+    for (const key in currencies) {
+        result[key] = currencies[key] * multiplier;
+    }
+
+    return result;
 }

@@ -257,3 +257,5 @@ Temporary Items
 .apdisk
 
 .idea/
+
+trivy.log

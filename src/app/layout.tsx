@@ -4,6 +4,8 @@ import './globals.css'
 import {Header} from "./header";
 import {Footer} from "../components/footer";
 import {Analytics} from "../components/analytics";
+import {Providers} from "./providers";
+import clsx from "clsx";
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,19 +20,21 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={clsx(inter.className, 'dark')}>
     <head />
       <body className="relative min-h-screen bg-black bg-gradient-to-tr from-zinc-900/50 to-zinc-700/30">
       {
       process.env.ENABLE_VERCEL_ANALYTICS ? <Analytics /> : null
       }
+        <Providers>
 
-      <Header />
+          <Header />
 
-      <main className="min-h-[80vh]">{children}</main>
+          <main className="min-h-[80vh]">{children}</main>
 
-      <Footer />
+          <Footer />
 
+        </Providers>
       </body>
     </html>
 
